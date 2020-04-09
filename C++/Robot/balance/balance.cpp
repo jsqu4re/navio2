@@ -30,6 +30,7 @@ chrt -f -p 99 PID
 #include <arpa/inet.h>
 #include <memory>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -475,10 +476,20 @@ std::unique_ptr<RCOutput> get_rcout() {
 
 //=============================================================================
 
+void stop_motors_handler(sig_atomic_t s) {
+  printf("Terminating greacfully");
+  auto pwm = get_rcout();
+  pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_LEFT, SERVO_MID);
+  pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_RIGHT, SERVO_MID);
+  exit(0);
+}
+
 int main(int argc, char *argv[]) {
+  signal(SIGINT, stop_motors_handler);
+
   // Check to be the only user
   if (check_apm()) {
-    return 1;
+    return EXIT_FAILURE;
   }
   // Setup IMU
   auto sensor_name = get_sensor_name(argc, argv);
@@ -537,9 +548,9 @@ int main(int argc, char *argv[]) {
   pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_RIGHT, SERVO_MID);
 
   PID pid =
-      PID(SERVO_MAX - SERVO_MID, SERVO_MIN - SERVO_MID, 180, 0.00005, 0.002);
+      PID(SERVO_MAX - SERVO_MID, SERVO_MIN - SERVO_MID, 160, 0.00005, 0.0018);
 
-  float target_roll = 1.5;
+  float target_roll = 1.50;
   float dtsumm;
 
   while (true) {
