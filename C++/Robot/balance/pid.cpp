@@ -45,8 +45,8 @@ private:
   float _integral;
 };
 
-PID::PID(float max, float min, float Kp, float Kd, float Ki) {
-  pimpl = new PIDImpl(max, min, Kp, Kd, Ki);
+PID::PID(float min, float max, float Kp, float Ki, float Kd) {
+  pimpl = new PIDImpl(min, max, Kp, Ki, Kd);
 }
 float PID::calculate(float setpoint, float pv, float dt) {
   return pimpl->calculate(setpoint, pv, dt);
@@ -56,7 +56,7 @@ PID::~PID() { delete pimpl; }
 /**
  * Implementation
  */
-PIDImpl::PIDImpl(float max, float min, float Kp, float Kd, float Ki)
+PIDImpl::PIDImpl(float min, float max, float Kp, float Ki, float Kd)
     : _max(max), _min(min), _Kp(Kp), _Kd(Kd), _Ki(Ki), _pre_error(0),
       _integral(0) {}
 

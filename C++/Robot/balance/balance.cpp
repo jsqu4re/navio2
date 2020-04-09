@@ -547,16 +547,31 @@ int main(int argc, char *argv[]) {
   pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_LEFT, SERVO_MID);
   pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_RIGHT, SERVO_MID);
 
-  PID pid =
-      PID(SERVO_MAX - SERVO_MID, SERVO_MIN - SERVO_MID, 160, 0.00005, 0.0018);
+  PID pid_v = PID(-3, 3, 0.001, 0.0001, 0);
 
-  float target_roll = 1.50;
+  PID pid_roll =
+      PID(SERVO_MIN - SERVO_MID, SERVO_MAX - SERVO_MID, 160, 0.0018, 0.00005);
+
+  float setpoint_roll = 1.50;
+  float setpoint_v = 0;
   float dtsumm;
+
+  {
+    printf("Waiting...\n");
+    roll_dt measurement{100, 0};
+    while (measurement.roll > 3 || measurement.roll < -3) {
+      measurement = imuLoop(ahrs.get());
+    }
+    printf("ready! %+05.2f\n", measurement.roll);
+  }
 
   while (true) {
     roll_dt measurement = imuLoop(ahrs.get());
     float increment =
-        pid.calculate(target_roll, measurement.roll, measurement.dt);
+        pid_roll.calculate(setpoint_roll, measurement.roll, measurement.dt);
+
+    setpoint_roll = pid_v.calculate(0, increment, measurement.dt);
+
     float pwm_target = SERVO_MID + increment;
 
     dtsumm += measurement.dt;
@@ -564,10 +579,12 @@ int main(int argc, char *argv[]) {
       pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_LEFT, pwm_target);
       pwm->set_duty_cycle(PWM_OUTPUT_WHEEL_RIGHT, pwm_target);
       // Console output
-      printf("ROLL: %+05.2f INC: %+05.2f TARGET: %+05.2f PERIOD %.4fs RATE "
-             "%dHz \n",
-             measurement.roll, increment, pwm_target, measurement.dt,
-             int(1 / measurement.dt));
+      printf(
+          "SETPOINT: %+05.2f ROLL: %+05.2f INC: %+05.2f TARGET: %+05.2f PERIOD "
+          "%.4fs RATE "
+          "%dHz \n",
+          setpoint_roll, measurement.roll, increment, pwm_target,
+          measurement.dt, int(1 / measurement.dt));
       dtsumm = 0;
     }
   }

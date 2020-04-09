@@ -26,12 +26,12 @@
 class PIDImpl;
 class PID {
 public:
+  // min - minimum value of manipulated variable
+  // max - maximum value of manipulated variable
   // Kp -  proportional gain
   // Ki -  Integral gain
   // Kd -  derivative gain
-  // max - maximum value of manipulated variable
-  // min - minimum value of manipulated variable
-  PID(float max, float min, float Kp, float Kd, float Ki);
+  PID(float min, float max, float Kp, float Ki, float Kd);
 
   // Returns the manipulated variable given a setpoint and current process value
   float calculate(float setpoint, float pv, float dt);
